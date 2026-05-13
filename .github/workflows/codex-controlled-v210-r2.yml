@@ -12,6 +12,10 @@ permissions:
   contents: write
   actions: write
 
+concurrency:
+  group: codex-controlled-v210-r2
+  cancel-in-progress: true
+
 jobs:
   build:
     name: controlled OP-ACE-6T v2.1.0-r2
@@ -59,6 +63,7 @@ jobs:
             flex \
             git \
             jq \
+            libdw-dev \
             libelf-dev \
             libssl-dev \
             lld \
@@ -70,6 +75,7 @@ jobs:
             wget \
             zip \
             zstd
+          test -f /usr/include/dwarf.h
           ccache --version
 
       - name: Build controlled kernel
