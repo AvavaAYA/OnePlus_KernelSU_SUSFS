@@ -1,0 +1,110 @@
+name: Codex controlled v2.1.0-r2 build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/codex-controlled-v210-r2.yml
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build:
+    name: controlled OP-ACE-6T v2.1.0-r2
+    runs-on: ubuntu-latest
+    env:
+      CCACHE_DIR: /home/runner/.ccache
+      CCACHE_MAXSIZE: 10G
+      CCACHE_COMPRESS: 'true'
+      CCACHE_COMPRESSLEVEL: '3'
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      GH_TOKEN: ${{ github.token }}
+      GH_HTTP_TIMEOUT: 600
+    steps:
+      - name: Checkout controlled branch
+        uses: actions/checkout@v6
+        with:
+          ref: ci-v210-r2
+          fetch-depth: 1
+
+      - name: Disk cleanup
+        uses: ./.github/actions/disk-cleanup
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc \
+            bison \
+            build-essential \
+            ca-certificates \
+            ccache \
+            curl \
+            flex \
+            git \
+            jq \
+            libelf-dev \
+            libssl-dev \
+            lld \
+            llvm \
+            python3 \
+            python3-pip \
+            rsync \
+            unzip \
+            wget \
+            zip \
+            zstd
+          ccache --version
+
+      - name: Build controlled kernel
+        id: build
+        uses: ./.github/actions/action.yml
+        with:
+          op_config_json: |
+            {
+              "model": "OP-ACE-6T",
+              "soc": "canoe",
+              "branch": "wild/sm8845",
+              "manifest": "oneplus_ace_6t_w.xml",
+              "android_version": "android16",
+              "kernel_version": "6.12",
+              "os_version": "OOS16",
+              "lto": "none",
+              "zyc_compiler": "",
+              "c_compiler": "kernel_platform/prebuilts/clang/host/linux-x86/clang-r547379/bin",
+              "rust_compiler": "kernel_platform/prebuilts/rust/linux-x86/1.82.0/bin",
+              "bindgen": "",
+              "rust_build": true,
+              "disk_cleanup": true,
+              "hmbird": false,
+              "susfs": true,
+              "ds": false,
+              "bbg": true,
+              "bbr": true,
+              "ttl": true,
+              "ip_set": true,
+              "unicode": true,
+              "ntsync": true,
+              "uname": "OP-WILD"
+            }
+          ksu_type: KSUN
+          ksu_branch_or_hash: 551ad80473f60e052917aec08abf5323b6ab2f7c
+          susfs_commit_hash_or_branch: 2e05aebdb623e87d877b7d3abdb0957f127b6ba8
+          build_timestamp: Thu Apr 16 14:49:32 UTC 2026
+          optimize_level: O2
+          clean: 'true'
+
+      - name: Print outputs
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "kernel_version=${{ steps.build.outputs.kernel_version }}"
+          echo "zip_name=${{ steps.build.outputs.zip_name }}"
+          echo "anykernel_dir=${{ steps.build.outputs.anykernel_dir }}"
