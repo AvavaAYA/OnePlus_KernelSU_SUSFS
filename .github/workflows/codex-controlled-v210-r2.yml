@@ -110,6 +110,22 @@ jobs:
           optimize_level: O2
           clean: 'true'
 
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: codex-v210-r2-failure-${{ github.run_id }}
+          path: |
+            OP-ACE-6T/kernel_platform/common/build.log
+            OP-ACE-6T/kernel_platform/common/out/.config
+            OP-ACE-6T/kernel_platform/common/out/include/config/auto.conf
+            OP-ACE-6T/kernel_platform/common/out/include/generated/compile.h
+            OP-ACE-6T/kernel_platform/common/out/Module.symvers
+            OP-ACE-6T/kernel_platform/common/out/.tmp_versions
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 9
+
       - name: Print outputs
         if: always()
         shell: bash
