@@ -32,7 +32,17 @@ jobs:
           fetch-depth: 1
 
       - name: Disk cleanup
-        uses: ./.github/actions/disk-cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          df -h
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          sudo docker image prune --all --force || true
+          sudo docker builder prune --all --force || true
+          df -h
 
       - name: Install dependencies
         shell: bash
@@ -107,4 +117,3 @@ jobs:
           set -euo pipefail
           echo "kernel_version=${{ steps.build.outputs.kernel_version }}"
           echo "zip_name=${{ steps.build.outputs.zip_name }}"
-          echo "anykernel_dir=${{ steps.build.outputs.anykernel_dir }}"
