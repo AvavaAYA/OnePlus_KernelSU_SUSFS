@@ -88,25 +88,27 @@ jobs:
           const path = '.github/actions/action.yml';
           let text = fs.readFileSync(path, 'utf8');
           const needle = '        esac\n        \n        cd "$COMMON_KERNEL_FOLDER"\n';
-          const shim = String.raw`        esac
-        
-        if [ -d "$KSUN_FOLDER/kernel" ]; then
-          echo "Applying KSUN/SUSFS compile compatibility shim"
-          KSUN_KERNEL="$KSUN_FOLDER/kernel"
-          if grep -q 'ksu_sucompat_init();' "$KSUN_KERNEL/core/init.c"; then
-            if ! grep -q 'void ksu_sucompat_init(void);' "$KSUN_KERNEL/core/init.c"; then
-              perl -0pi -e 's/(#include "hook\/syscall_hook.h"\n)/$1\nvoid ksu_sucompat_init(void);\nvoid ksu_setuid_hook_init(void);\n/' "$KSUN_KERNEL/core/init.c"
-            fi
-          fi
-          if grep -q 'is_zygote_normal_app_uid' "$KSUN_KERNEL/hook/setuid_hook.c"; then
-            if ! grep -q 'static inline bool is_zygote_normal_app_uid' "$KSUN_KERNEL/hook/setuid_hook.c"; then
-              perl -0pi -e 's/(extern struct cred \*ksu_cred;\n)/$1\nstatic inline bool is_zygote_normal_app_uid(uid_t uid)\n{\n    return ((uid >= 10000 && uid < 19999) || (uid >= 1010000 && uid < 1019999));\n}\n/' "$KSUN_KERNEL/hook/setuid_hook.c"
-            fi
-          fi
-        fi
-        
-        cd "$COMMON_KERNEL_FOLDER"
-`;
+          const shim = [
+            '        esac',
+            '        ',
+            '        if [ -d "$KSUN_FOLDER/kernel" ]; then',
+            '          echo "Applying KSUN/SUSFS compile compatibility shim"',
+            '          KSUN_KERNEL="$KSUN_FOLDER/kernel"',
+            "          if grep -q 'ksu_sucompat_init();' \"$KSUN_KERNEL/core/init.c\"; then",
+            "            if ! grep -q 'void ksu_sucompat_init(void);' \"$KSUN_KERNEL/core/init.c\"; then",
+            "              perl -0pi -e 's/(#include \"hook\\\\/syscall_hook.h\"\\\\n)/$1\\\\nvoid ksu_sucompat_init(void);\\\\nvoid ksu_setuid_hook_init(void);\\\\n/' \"$KSUN_KERNEL/core/init.c\"",
+            '            fi',
+            '          fi',
+            "          if grep -q 'is_zygote_normal_app_uid' \"$KSUN_KERNEL/hook/setuid_hook.c\"; then",
+            "            if ! grep -q 'static inline bool is_zygote_normal_app_uid' \"$KSUN_KERNEL/hook/setuid_hook.c\"; then",
+            "              perl -0pi -e 's/(extern struct cred \\\\*ksu_cred;\\\\n)/$1\\\\nstatic inline bool is_zygote_normal_app_uid(uid_t uid)\\\\n{\\\\n    return ((uid >= 10000 && uid < 19999) || (uid >= 1010000 && uid < 1019999));\\\\n}\\\\n/' \"$KSUN_KERNEL/hook/setuid_hook.c\"",
+            '            fi',
+            '          fi',
+            '        fi',
+            '        ',
+            '        cd "$COMMON_KERNEL_FOLDER"',
+            '',
+          ].join('\n');
           if (!text.includes('Applying KSUN/SUSFS compile compatibility shim')) {
             if (!text.includes(needle)) {
               throw new Error('SUSFS action insertion point not found');
